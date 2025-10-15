@@ -3,14 +3,14 @@
 """Convert all images in a specified folder to NumPy .npy files.
 Each image is saved as a separate .npy file with the same base name."""
 
+import argparse
 import os
-import sys
 
 import numpy as np
 from PIL import Image
 
 
-def convert_images_to_npy(folder_path):
+def convert_images_to_npy(folder_path, convert_to_grayscale=False, resize=False):
     if not os.path.isdir(folder_path):
         print(f"Error: The folder '{folder_path}' does not exist.")
         return
@@ -27,6 +27,11 @@ def convert_images_to_npy(folder_path):
         img_path = os.path.join(folder_path, img_name)
         try:
             with Image.open(img_path) as img:
+                if convert_to_grayscale and img.mode != 'L':
+                    img = img.convert('L')
+                if resize:
+                    img = img.resize((512, 512))
+
                 img_array = np.array(img)
 
             base_name = os.path.splitext(img_name)[0]
@@ -37,9 +42,27 @@ def convert_images_to_npy(folder_path):
         except Exception as e:
             print(f"Failed to process {img_name}: {e}")
 
+def main():
+    parser = argparse.ArgumentParser(description="Convert all images in a folder to .npy files.")
+    parser.add_argument(
+        "folder_path",
+        type=str,
+        help="Path to the folder containing images."
+    )
+    parser.add_argument(
+        "--grayscale",
+        "-g",
+        action="store_true",
+        help="Convert images to grayscale before saving as .npy."
+    )
+    parser.add_argument(
+        "--resize",
+        "-r",
+        action="store_true",
+        help="Resize images to 512x512 before saving as .npy."
+    )
+    args = parser.parse_args()
+    convert_images_to_npy(args.folder_path, args.grayscale, args.resize)
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python convert_images_to_npy.py <folder_path>")
-    else:
-        folder_path = sys.argv[1]
-        convert_images_to_npy(folder_path)
+    main()
